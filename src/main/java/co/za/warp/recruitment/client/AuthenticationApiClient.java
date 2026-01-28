@@ -1,4 +1,4 @@
-package co.za.warp.recruitment.service;
+package co.za.warp.recruitment.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,9 +20,9 @@ import java.util.logging.Logger;
  * JSON responses with various field name possibilities.
  */
 @Component
-public class AuthenticationEndpointClientService {
+public class AuthenticationApiClient {
 
-    static final Logger log = Logger.getLogger(AuthenticationEndpointClientService.class.getName());
+    static final Logger log = Logger.getLogger(AuthenticationApiClient.class.getName());
 
     private final HttpClient http = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))

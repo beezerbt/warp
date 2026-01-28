@@ -1,5 +1,6 @@
 package co.za.warp.recruitment.service;
 
+import co.za.warp.recruitment.client.AuthenticationApiClient;
 import co.za.warp.recruitment.client.RateLimitedLineRunner;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,16 +15,16 @@ import java.util.function.Function;
 public class AuthenticationService {
 
     private final RateLimiter rateLimiter;
-    private final AuthenticationEndpointClientService authenticationEndpointClientService;
+    private final AuthenticationApiClient authenticationApiClient;
 
     @Autowired
-    public AuthenticationService(RateLimiter rateLimiter, AuthenticationEndpointClientService authenticationEndpointClientService) {
+    public AuthenticationService(RateLimiter rateLimiter, AuthenticationApiClient authenticationApiClient) {
         this.rateLimiter = rateLimiter;
-        this.authenticationEndpointClientService = authenticationEndpointClientService;
+        this.authenticationApiClient = authenticationApiClient;
     }
 
     public Optional<String> authenticateOnce(String authUrl, String username, String password) throws Exception {
-        return authenticationEndpointClientService.authenticateOnce(authUrl, username, password);
+        return authenticationApiClient.authenticateOnce(authUrl, username, password);
     }
 
     public Optional<String> authenticateWithRateLimiter(String authUrl, String username, List<String> generatedPasswordList) throws Exception {

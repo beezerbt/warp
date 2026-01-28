@@ -15,11 +15,11 @@ import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class SubmissionServiceTest {
+class ZippingServiceTest {
 
     @Test
     void zipContainsExpectedEntries() throws Exception {
-        SubmissionService submissionService = new SubmissionService();
+        ZippingService zippingService = new ZippingService();
 
         // --- Inputs that are not part of the repo tree ---
         Path cv = Files.createTempFile("cv", ".pdf");
@@ -50,7 +50,7 @@ class SubmissionServiceTest {
         assertTrue(directoryHasFiles(projectRoot.resolve("src")), "Temp project src/ should contain files");
 
         // --- Create ZIP ---
-        byte[] zip = submissionService.buildZip(cv, dict, projectRoot);
+        byte[] zip = zippingService.buildZip(cv, dict, projectRoot);
 
         // --- Assert zip size <= 5 MiB ---
         assertNotNull(zip, "zip bytes should not be null");

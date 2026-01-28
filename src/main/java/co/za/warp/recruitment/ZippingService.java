@@ -5,18 +5,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -29,13 +20,11 @@ import java.util.zip.ZipOutputStream;
  * Then Base64 encodes the ZIP bytes and POSTs JSON to the temporary upload URL.
  */
 @Component
-public class SubmissionService {
+public class ZippingService {
 
     private static final long MAX_ZIP_BYTES = 5L * 1024L * 1024L; // 5MB
 
-    private final ObjectMapper mapper = new ObjectMapper();
-
-    byte[] buildZip(Path cvPdfPath, Path dictPath, Path projectRoot) throws IOException {
+    public byte[] buildZip(Path cvPdfPath, Path dictPath, Path projectRoot) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
 

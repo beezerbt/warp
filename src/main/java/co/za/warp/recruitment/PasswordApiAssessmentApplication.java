@@ -1,8 +1,11 @@
 package co.za.warp.recruitment;
 
+import co.za.warp.recruitment.client.UploadApiClient;
 import co.za.warp.recruitment.config.AppProperties;
+import co.za.warp.recruitment.domain.HttpResult;
 import co.za.warp.recruitment.service.AuthenticationService;
 import co.za.warp.recruitment.service.DictionaryGeneratorService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -10,17 +13,34 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @SpringBootApplication
 @EnableConfigurationProperties(AppProperties.class)
 public class PasswordApiAssessmentApplication implements CommandLineRunner {
 
+    //TODO::these should all be in a properties file or class
     public static final int EXPECTED_GENERATED_PASSWORD_TOTAL_COUNT = 1296;
+    public static final String WARP_AUTHENTICATION_URL = "https://recruitment.warpdevelopment.co.za/v2/api/authenticate";
+    public static final String WARP_AUTHENTICATION_USER_NAME = "John";
+    public static final String DICTIONARY_FILE_PREFIX = "dict";
+    public static final String DICTIONARY_FILE_SUFFIX = ".txt";
+    public static final String KAMBIZ_SHAHRI_CV_PDF_FILENAME = "Kambiz Shahri-2026.pdf";
+
     private final AuthenticationService authenticationService;
-    public PasswordApiAssessmentApplication (AuthenticationService authenticationService) {
+    private final ZippingService zippingService;
+    private final UploadApiClient uploadApiClient;
+
+    @Autowired
+    public PasswordApiAssessmentApplication (AuthenticationService authenticationService,
+                                             ZippingService zippingService,
+                                             UploadApiClient uploadApiClient) {
         this.authenticationService = authenticationService;
+        this.zippingService = zippingService;
+        this.uploadApiClient = uploadApiClient;
     }
 
     public static void main(String[] args) {
@@ -29,16 +49,23 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        String authUrl = "https://recruitment.warpdevelopment.co.za/v2/api/authenticate"; // Assign the authentication URL
-        String username = "John"; // Assign the username
+        //Generate the dictionary of possible passwords
         DictionaryGeneratorService dictionaryGeneratorService = new DictionaryGeneratorService();
-        Path tmpFilePath = Files.createTempFile("dict", ".txt");
+        Path tmpFilePath = Files.createTempFile(DICTIONARY_FILE_PREFIX, DICTIONARY_FILE_SUFFIX);
         int count = dictionaryGeneratorService.generate(tmpFilePath);
         if(count != EXPECTED_GENERATED_PASSWORD_TOTAL_COUNT) {
             throw new IllegalAccessException("Password list count was expected to be:" + EXPECTED_GENERATED_PASSWORD_TOTAL_COUNT);
         }
         List<String> fileEntriesList = dictionaryGeneratorService.readFileIntoList(tmpFilePath);
-        Optional<String> authenticationResult = authenticationService.authenticateWithRateLimiter(authUrl, username, fileEntriesList);
+        Optional<String> authenticationResult = authenticationService.authenticateWithRateLimiter(WARP_AUTHENTICATION_URL, WARP_AUTHENTICATION_USER_NAME, fileEntriesList);
         authenticationResult.ifPresentOrElse(System.out::println, () -> System.out.println("Authentication failed."));
+        //Now generate the zip file using the service
+        //Get a path to the Kambiz Shahri-2026.pdf file in resources
+        Path cv = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource(KAMBIZ_SHAHRI_CV_PDF_FILENAME)).toURI());
+        Path projectRoot = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource("")).toURI());
+        byte[] zip = zippingService.buildZip(cv, tmpFilePath, projectRoot);
+        //TODO::assure zip contents are there
+        HttpResult uploadResult = uploadApiClient.submitZipBase64(WARP_AUTHENTICATION_URL, zip);
+        System.out.println("Upload result: " + uploadResult);
     }
 }
