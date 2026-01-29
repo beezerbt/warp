@@ -2,32 +2,37 @@ package co.za.warp.recruitment.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import io.github.resilience4j.ratelimiter.RateLimiter;
-import io.github.resilience4j.ratelimiter.RateLimiterConfig;
+import com.google.common.util.concurrent.RateLimiter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class ApplicationConfig {
 
+    public static final int MAX_WARMUP_SECONDS = 4;
     public static final int HTTP_CONNECTION_TIMEOUT_DURATION_SECONDS = 10;
-    public static final int RATE_LIMITER_MAX_ATTEMPTS_PER_SECONDS = 8;
-    public static final int RATE_LIMIT_REFRESH_PERIODS = 1;
-    public static final int RATE_LIMITER_TIMEOUT_DURATION_SECONDS = 2;
-    public static final String RATE_LIMITER_NAME = "outboundAuth";
+    public static final double OUTBOUND_RATE_LIMITER_MAX_ATTEMPTS_PER_SECONDS = 8.0;
+    // Upload endpoint: 1 request / 5 minutes = 1 / 300 permits per second
+    public static final double UPLOAD_RATE_LIMITER_MAX_ATTEMPTS_PER_SECONDS = 1.0/300.0;
+    public static final long UPLOAD_RATE_LIMITER_WARM_UP_PERIOD = 350L;
+    public static final String OUTBOUND_AUTH_RATE_LIMITER_BEAN = "outboundAuthRateLimiter";
+    public static final String OUTBOUND_UPLOAD_RATE_LIMITER_BEAN = "outboundUploadRateLimiter";
 
-    @Bean
+    @Bean(name = OUTBOUND_AUTH_RATE_LIMITER_BEAN)
+    @SuppressWarnings("UnstableApiUsage")
     public RateLimiter outboundAuthRateLimiter() {
-        RateLimiterConfig config = RateLimiterConfig.custom()
-                .limitRefreshPeriod(Duration.ofSeconds(RATE_LIMIT_REFRESH_PERIODS))
-                .limitForPeriod(RATE_LIMITER_MAX_ATTEMPTS_PER_SECONDS)                    // <= 8 per second (safe under 10/s)
-                .timeoutDuration(Duration.ofSeconds(RATE_LIMITER_TIMEOUT_DURATION_SECONDS)) // wait up to 2s for permission
-                .build();
+        // Auth endpoint: 10 requests / second max.
+        return RateLimiter.create(OUTBOUND_RATE_LIMITER_MAX_ATTEMPTS_PER_SECONDS, MAX_WARMUP_SECONDS, TimeUnit.SECONDS);
+    }
 
-        return RateLimiter.of(RATE_LIMITER_NAME, config);
+    @Bean(name = OUTBOUND_UPLOAD_RATE_LIMITER_BEAN)
+    @SuppressWarnings("UnstableApiUsage")
+    public RateLimiter outboundUploadRateLimiter() {
+        return RateLimiter.create(UPLOAD_RATE_LIMITER_MAX_ATTEMPTS_PER_SECONDS, UPLOAD_RATE_LIMITER_WARM_UP_PERIOD, TimeUnit.SECONDS);
     }
 
     @Bean

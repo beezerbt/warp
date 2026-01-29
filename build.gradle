@@ -19,9 +19,7 @@ repositories {
 
 dependencies {
     //Rate limiting - Start
-    implementation "io.github.resilience4j:resilience4j-ratelimiter:2.2.0"
-    // optional but useful (metrics/events)
-    implementation "io.github.resilience4j:resilience4j-micrometer:2.2.0"
+    implementation 'com.google.guava:guava:33.0.0-jre'
     //Rate limiting - End
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'com.fasterxml.jackson.core:jackson-databind'

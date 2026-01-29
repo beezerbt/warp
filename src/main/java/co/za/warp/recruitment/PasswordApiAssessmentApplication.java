@@ -59,13 +59,14 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
         List<String> fileEntriesList = dictionaryGeneratorService.readFileIntoList(tmpFilePath);
         Optional<String> authenticationResult = authenticationService.authenticateWithRateLimiter(WARP_AUTHENTICATION_URL, WARP_AUTHENTICATION_USER_NAME, fileEntriesList);
         authenticationResult.ifPresentOrElse(System.out::println, () -> System.out.println("Authentication failed."));
+
+
         //Now generate the zip file using the service
         //Get a path to the Kambiz Shahri-2026.pdf file in resources
-        Path cv = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource(KAMBIZ_SHAHRI_CV_PDF_FILENAME)).toURI());
+/*        Path cv = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource(KAMBIZ_SHAHRI_CV_PDF_FILENAME)).toURI());
         Path projectRoot = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource("")).toURI());
         byte[] zip = zippingService.buildZip(cv, tmpFilePath, projectRoot);
-        //TODO::assure zip contents are there
         HttpResult uploadResult = uploadApiClient.submitZipBase64(WARP_AUTHENTICATION_URL, zip);
-        System.out.println("Upload result: " + uploadResult);
+        System.out.println("Upload result: " + uploadResult);*/
     }
 }
