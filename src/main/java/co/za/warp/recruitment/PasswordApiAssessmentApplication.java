@@ -2,7 +2,6 @@ package co.za.warp.recruitment;
 
 import co.za.warp.recruitment.client.UploadApiClient;
 import co.za.warp.recruitment.config.AppProperties;
-import co.za.warp.recruitment.domain.HttpResult;
 import co.za.warp.recruitment.service.AuthenticationService;
 import co.za.warp.recruitment.service.DictionaryGeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +12,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @SpringBootApplication
