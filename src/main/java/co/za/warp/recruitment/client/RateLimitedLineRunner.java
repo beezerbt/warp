@@ -1,5 +1,6 @@
 package co.za.warp.recruitment.client;
 
+import co.za.warp.recruitment.domain.HttpResult;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.RateLimiter;
 
@@ -42,6 +43,30 @@ public class RateLimitedLineRunner {
             }
         }
         return Optional.empty();
+    }
+
+    public static Optional<HttpResult> uploadUntilResult(
+            RateLimiter rateLimiter,
+            byte[] zipBytes,
+            Function<byte[], Optional<HttpResult>> uploadFun
+    ) {
+        Preconditions.checkNotNull(rateLimiter, "rateLimiter must not be null");
+        Preconditions.checkNotNull(zipBytes, "zipBytes must not be null");
+        Preconditions.checkNotNull(uploadFun, "uploadFun must not be null");
+
+        rateLimiter.acquire();
+        Optional<HttpResult> httpResultOptional = uploadFun.apply(zipBytes);
+        if (httpResultOptional.isEmpty()) {
+            throw new IllegalStateException("uploadFun returned empty result");
+        }
+        HttpResult httpResult = httpResultOptional.get();
+        if (httpResult.statusCode() == 200) return httpResultOptional;
+        if (httpResult.statusCode() == 429) {
+            throw new IllegalStateException("Upload rate-limited (429): " + httpResult.value());
+        }
+        throw new IllegalStateException("Upload failed (" + httpResult.statusCode() + "): " + httpResult.value());
+
+
     }
 
 }

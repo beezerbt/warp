@@ -30,7 +30,7 @@ public class UploadApiClient {
      * Uploads a ZIP (bytes) as Base64-encoded JSON to the provided URL.
      * Returns the HTTP status code and response body for debugging.
      */
-    public HttpResult submitZipBase64(String uploadUrl, byte[] zipBytes) throws Exception {
+    public HttpResult uploadZipBase64Once(String uploadUrl, byte[] zipBytes) throws Exception {
         if (zipBytes == null || zipBytes.length == 0) {
             throw new IllegalArgumentException("zipBytes is null/empty");
         }

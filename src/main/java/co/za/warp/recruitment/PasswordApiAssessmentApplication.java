@@ -1,9 +1,10 @@
 package co.za.warp.recruitment;
 
-import co.za.warp.recruitment.client.UploadApiClient;
+import co.za.warp.recruitment.client.AuthenticationApiClient;
 import co.za.warp.recruitment.config.AppProperties;
 import co.za.warp.recruitment.service.AuthenticationService;
 import co.za.warp.recruitment.service.DictionaryGeneratorService;
+import co.za.warp.recruitment.service.UploadService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -12,12 +13,17 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 @SpringBootApplication
 @EnableConfigurationProperties(AppProperties.class)
 public class PasswordApiAssessmentApplication implements CommandLineRunner {
+
+    static final Logger log = Logger.getLogger(AuthenticationApiClient.class.getName());
 
     //TODO::these should all be in a properties file or class
     public static final int EXPECTED_GENERATED_PASSWORD_TOTAL_COUNT = 1296;
@@ -29,15 +35,14 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
 
     private final AuthenticationService authenticationService;
     private final ZippingService zippingService;
-    private final UploadApiClient uploadApiClient;
+    private final UploadService uploadService;
 
     @Autowired
     public PasswordApiAssessmentApplication (AuthenticationService authenticationService,
-                                             ZippingService zippingService,
-                                             UploadApiClient uploadApiClient) {
+                                             ZippingService zippingService, UploadService uploadService) {
         this.authenticationService = authenticationService;
         this.zippingService = zippingService;
-        this.uploadApiClient = uploadApiClient;
+        this.uploadService = uploadService;
     }
 
     public static void main(String[] args) {
@@ -53,17 +58,18 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
         if(count != EXPECTED_GENERATED_PASSWORD_TOTAL_COUNT) {
             throw new IllegalAccessException("Password list count was expected to be:" + EXPECTED_GENERATED_PASSWORD_TOTAL_COUNT);
         }
+        //Generate dictionary and use the authentication service to get the upload URL
         List<String> fileEntriesList = dictionaryGeneratorService.readFileIntoList(tmpFilePath);
         Optional<String> authenticationResult = authenticationService.authenticateWithRateLimiter(WARP_AUTHENTICATION_URL, WARP_AUTHENTICATION_USER_NAME, fileEntriesList);
-        authenticationResult.ifPresentOrElse(System.out::println, () -> System.out.println("Authentication failed."));
-
-
-        //Now generate the zip file using the service
-        //Get a path to the Kambiz Shahri-2026.pdf file in resources
-/*        Path cv = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource(KAMBIZ_SHAHRI_CV_PDF_FILENAME)).toURI());
+        if(authenticationResult.isEmpty()) {
+            throw new IllegalAccessException("Authentication failed");
+        }
+        log.info("Authentication result: " + authenticationResult.get());
+        //Generate the zip file
+        Path cv = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource(KAMBIZ_SHAHRI_CV_PDF_FILENAME)).toURI());
         Path projectRoot = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource("")).toURI());
         byte[] zip = zippingService.buildZip(cv, tmpFilePath, projectRoot);
-        HttpResult uploadResult = uploadApiClient.submitZipBase64(WARP_AUTHENTICATION_URL, zip);
-        System.out.println("Upload result: " + uploadResult);*/
+        //Upload it
+        uploadService.uploadWithRateLimiter(authenticationResult.get(), zip);
     }
 }

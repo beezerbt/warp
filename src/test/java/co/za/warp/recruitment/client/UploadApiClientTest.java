@@ -28,29 +28,29 @@ class UploadApiClientTest {
     @Mock HttpResponse<String> httpResponse;
 
     @Test
-    void submitZipBase64_throwsOnNullBytes() {
+    void uploadZipBase64_Once_throwsOnNullBytes() {
         UploadApiClient client = new UploadApiClient(httpClient, objectMapper);
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> client.submitZipBase64("https://example.com/upload", null)
+                () -> client.uploadZipBase64Once("https://example.com/upload", null)
         );
         assertEquals("zipBytes is null/empty", ex.getMessage());
         verifyNoInteractions(httpClient, objectMapper);
     }
 
     @Test
-    void submitZipBase64_throwsOnEmptyBytes() {
+    void uploadZipBase64_Once_throwsOnEmptyBytes() {
         UploadApiClient client = new UploadApiClient(httpClient, objectMapper);
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> client.submitZipBase64("https://example.com/upload", new byte[0])
+                () -> client.uploadZipBase64Once("https://example.com/upload", new byte[0])
         );
         assertEquals("zipBytes is null/empty", ex.getMessage());
         verifyNoInteractions(httpClient, objectMapper);
     }
 
     @Test
-    void submitZipBase64_postsJsonWithBase64AndReturnsHttpResult() throws Exception {
+    void uploadZipBase64_postsJsonWithBase64OnceAndReturnsHttpResult() throws Exception {
         // Arrange
         String uploadUrl = "https://example.com/upload";
         byte[] zipBytes = "zip-bytes".getBytes(StandardCharsets.UTF_8);
@@ -70,7 +70,7 @@ class UploadApiClientTest {
         UploadApiClient client = new UploadApiClient(httpClient, objectMapper);
 
         // Act
-        HttpResult result = client.submitZipBase64(uploadUrl, zipBytes);
+        HttpResult result = client.uploadZipBase64Once(uploadUrl, zipBytes);
 
         // Assert: returned result
         assertNotNull(result);
