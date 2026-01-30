@@ -34,11 +34,11 @@ public class AuthenticationApiClient {
         log.info("START - Authenticating once");
         var userNamePasswordToEncode = username + ":" + password;
         log.info("userNamePasswordToEncode: " + userNamePasswordToEncode);
-        String basic = Base64.getEncoder().encodeToString((userNamePasswordToEncode).getBytes(StandardCharsets.UTF_8));
-        log.info("Request basic auth: " + basic);
+        String base64EncodedUserNamePasswordAsString = Base64.getEncoder().encodeToString((userNamePasswordToEncode).getBytes(StandardCharsets.UTF_8));
+        log.info("Request basic auth: " + base64EncodedUserNamePasswordAsString);
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(authUrl))
-                .header("Authorization", "Basic " + basic)
+                .header("Authorization", "Basic " + base64EncodedUserNamePasswordAsString)
                 .GET()
                 .timeout(Duration.ofSeconds(20))
                 .build();

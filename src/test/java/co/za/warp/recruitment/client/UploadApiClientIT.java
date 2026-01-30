@@ -10,7 +10,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -21,15 +20,12 @@ import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class UploadApiClientIT {
 
-    public static final String UPLOAD_API_CLIENT_429_RESPONSE_BODY_CONTENT = "You are rate limited. Try again in 5 minutes, along with an additional 15 minute penalty.";
-    public static final String UPLOAD_API_CLIENT_201_RESPONSE_BODY_CONTENT = "{\"ok\":true}";
-    public static final int HTTP_STATUS_CODE_RATE_LIMIT_EXCEEDED = 429;
-    public static final int HTTP_STATUS_CODE_POST_SUCCEEDED = 201;
     public static final String POST_HTTP_METHOD = "POST";
     @Mock
     HttpClient httpClient;
@@ -39,24 +35,24 @@ class UploadApiClientIT {
     HttpResponse<String> httpResponse;
 
     @Test
-    void uploadZipBase64_Once_throwsOnNullBytes() {
-        UploadApiClient client = new UploadApiClient(httpClient, objectMapper);
+    void uploadZipBase64_Once_throwsOnNullUploadPayload() {
+        UploadApiClient client = new UploadApiClient(httpClient);
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> client.uploadZipBase64Once("https://example.com/upload", null)
         );
-        assertEquals("zipBytes is null/empty", ex.getMessage());
+        assertEquals("Both upload URL and payload must not be null.", ex.getMessage());
         verifyNoInteractions(httpClient, objectMapper);
     }
 
     @Test
-    void uploadZipBase64_Once_throwsOnEmptyBytes() {
-        UploadApiClient client = new UploadApiClient(httpClient, objectMapper);
+    void uploadZipBase64_Once_throwsOnEmptyUploadPayload() {
+        UploadApiClient client = new UploadApiClient(httpClient);
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> client.uploadZipBase64Once("https://example.com/upload", new byte[0])
+                () -> client.uploadZipBase64Once("https://example.com/upload", "")
         );
-        assertEquals("zipBytes is null/empty", ex.getMessage());
+        assertEquals("Both upload URL and payload must not be blank.", ex.getMessage());
         verifyNoInteractions(httpClient, objectMapper);
     }
 
@@ -66,16 +62,17 @@ class UploadApiClientIT {
     void uploadZipBase64_postsJsonWithBase64OnceAndReturnsHttpResult() throws Exception {
         // Arrange
         UploadApiClient uploadApiClient = TestUtility.generateMockedUploadApiClient(
-                HTTP_STATUS_CODE_POST_SUCCEEDED,
-                UPLOAD_API_CLIENT_201_RESPONSE_BODY_CONTENT, httpClient, objectMapper, httpResponse);
+                TestUtility.HTTP_STATUS_CODE_POST_SUCCEEDED,
+                TestUtility.UPLOAD_API_CLIENT_201_RESPONSE_BODY_CONTENT, httpClient, httpResponse);
         // Act
         String uploadUrl = "https://example.com/upload";
         byte[] zipBytes = "zip-bytes".getBytes(StandardCharsets.UTF_8);
-        HttpResultDTO result = uploadApiClient.uploadZipBase64Once(uploadUrl, zipBytes);
+        String base64EncodedZipFileContentsAsString = Base64.getEncoder().encodeToString(zipBytes);
+        HttpResultDTO result = uploadApiClient.uploadZipBase64Once(uploadUrl, base64EncodedZipFileContentsAsString);
         // Assert: returned result
         assertNotNull(result);
-        assertEquals(HTTP_STATUS_CODE_POST_SUCCEEDED, result.statusCode());
-        assertEquals(UPLOAD_API_CLIENT_201_RESPONSE_BODY_CONTENT, result.value());
+        assertEquals(TestUtility.HTTP_STATUS_CODE_POST_SUCCEEDED, result.statusCode());
+        assertEquals(TestUtility.UPLOAD_API_CLIENT_201_RESPONSE_BODY_CONTENT, result.value());
         // Assert: request built as expected
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(httpClient).send(requestCaptor.capture(), any(HttpResponse.BodyHandler.class));
@@ -87,8 +84,6 @@ class UploadApiClientIT {
                 UploadApiClient.CONTENT_TYPE_VALUE,
                 req.headers().firstValue(UploadApiClient.CONTENT_TYPE_KEY).orElseThrow()
         );
-        // And ensure we actually called the mapper
-        verify(objectMapper).writeValueAsString(any());
     }
 
     @Test
@@ -97,15 +92,16 @@ class UploadApiClientIT {
     void mockRateViolation() throws Exception {
         // Arrange
         UploadApiClient uploadApiClient = TestUtility.generateMockedUploadApiClient(
-                HTTP_STATUS_CODE_RATE_LIMIT_EXCEEDED,
-                UPLOAD_API_CLIENT_429_RESPONSE_BODY_CONTENT, httpClient, objectMapper, httpResponse);
+                TestUtility.HTTP_STATUS_CODE_RATE_LIMIT_EXCEEDED,
+                TestUtility.UPLOAD_API_CLIENT_429_RESPONSE_BODY_CONTENT, httpClient, httpResponse);
         // Act
         String uploadUrl = "https://example.com/upload";
         byte[] zipBytes = "zip-bytes".getBytes(StandardCharsets.UTF_8);
-        HttpResultDTO httpResultDTO = uploadApiClient.uploadZipBase64Once(uploadUrl, zipBytes);
+        String base64EncodedZipFileContentsAsString = Base64.getEncoder().encodeToString(zipBytes);
+        HttpResultDTO httpResultDTO = uploadApiClient.uploadZipBase64Once(uploadUrl, base64EncodedZipFileContentsAsString);
         // Assert: returned result
         assertNotNull(httpResultDTO);
-        assertEquals(HTTP_STATUS_CODE_RATE_LIMIT_EXCEEDED, httpResultDTO.statusCode());
-        assertEquals(UPLOAD_API_CLIENT_429_RESPONSE_BODY_CONTENT, httpResultDTO.value());
+        assertEquals(TestUtility.HTTP_STATUS_CODE_RATE_LIMIT_EXCEEDED, httpResultDTO.statusCode());
+        assertEquals(TestUtility.UPLOAD_API_CLIENT_429_RESPONSE_BODY_CONTENT, httpResultDTO.value());
     }
 }

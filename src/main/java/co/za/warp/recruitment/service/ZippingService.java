@@ -26,13 +26,10 @@ public class ZippingService {
     public byte[] buildZip(Path cvPdfPath, Path dictPath, Path projectRoot) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
-
             // CV TODO::must be refactored
             addFile(zos, cvPdfPath, "CV.pdf");
-
             // dict.txt
             addFile(zos, dictPath, "dict.txt");
-
             // Project content (best effort)
             Path srcDir = projectRoot.resolve("src");
             if (!Files.exists(srcDir) || !Files.isDirectory(srcDir)) {
@@ -40,16 +37,13 @@ public class ZippingService {
             }
             // Project content (best effort)
             addFolderIfExists(zos, srcDir, "src");
-
             addFileIfExists(zos, projectRoot.resolve("build.gradle"), "build.gradle");
             addFileIfExists(zos, projectRoot.resolve("settings.gradle"), "settings.gradle");
             addFileIfExists(zos, projectRoot.resolve("README.md"), "README.md");
-
             // ✅ add the missing ones you created in the test
             addFileIfExists(zos, projectRoot.resolve(".gitignore"), ".gitignore");
             addFileIfExists(zos, projectRoot.resolve("gradlew"), "gradlew");
             addFileIfExists(zos, projectRoot.resolve("gradlew.bat"), "gradlew.bat");
-
             zos.finish();
             return baos.toByteArray();
         }
