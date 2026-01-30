@@ -1,6 +1,6 @@
-package co.za.warp.recruitment.client;
+package co.za.warp.recruitment.util;
 
-import co.za.warp.recruitment.domain.HttpResult;
+import co.za.warp.recruitment.domain.HttpResultDTO;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.RateLimiter;
 
@@ -26,7 +26,7 @@ public class RateLimitedLineRunner {
      * @return an Optional containing the first non-empty result obtained from applying the function to an element,
      *         or an empty Optional if no non-empty result is obtained
      */
-    public static Optional<String> runUntilResult(
+    public static Optional<String> rateLimitedAuthentication(
             RateLimiter rateLimiter,
             List<String> lines,
             Function<String, Optional<String>> fn
@@ -45,28 +45,21 @@ public class RateLimitedLineRunner {
         return Optional.empty();
     }
 
-    public static Optional<HttpResult> uploadUntilResult(
+    public static Optional<HttpResultDTO> rateLimitedUploadOfZipFile(
             RateLimiter rateLimiter,
             byte[] zipBytes,
-            Function<byte[], Optional<HttpResult>> uploadFun
+            Function<byte[], Optional<HttpResultDTO>> uploadFun
     ) {
         Preconditions.checkNotNull(rateLimiter, "rateLimiter must not be null");
         Preconditions.checkNotNull(zipBytes, "zipBytes must not be null");
         Preconditions.checkNotNull(uploadFun, "uploadFun must not be null");
 
         rateLimiter.acquire();
-        Optional<HttpResult> httpResultOptional = uploadFun.apply(zipBytes);
+        Optional<HttpResultDTO> httpResultOptional = uploadFun.apply(zipBytes);
         if (httpResultOptional.isEmpty()) {
-            throw new IllegalStateException("uploadFun returned empty result");
+            throw new IllegalStateException("Zip upload function httpResult was empty result!!");
         }
-        HttpResult httpResult = httpResultOptional.get();
-        if (httpResult.statusCode() == 200) return httpResultOptional;
-        if (httpResult.statusCode() == 429) {
-            throw new IllegalStateException("Upload rate-limited (429): " + httpResult.value());
-        }
-        throw new IllegalStateException("Upload failed (" + httpResult.statusCode() + "): " + httpResult.value());
-
-
+        return httpResultOptional;
     }
 
 }

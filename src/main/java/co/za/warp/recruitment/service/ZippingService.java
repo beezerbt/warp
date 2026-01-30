@@ -1,6 +1,5 @@
-package co.za.warp.recruitment;
+package co.za.warp.recruitment.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -28,7 +27,7 @@ public class ZippingService {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
 
-            // CV
+            // CV TODO::must be refactored
             addFile(zos, cvPdfPath, "CV.pdf");
 
             // dict.txt

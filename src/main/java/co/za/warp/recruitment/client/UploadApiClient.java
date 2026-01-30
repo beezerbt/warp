@@ -1,8 +1,8 @@
 package co.za.warp.recruitment.client;
 
 
-import co.za.warp.recruitment.domain.HttpResult;
-import co.za.warp.recruitment.domain.UploadSubmissionRequest;
+import co.za.warp.recruitment.domain.HttpResultDTO;
+import co.za.warp.recruitment.domain.UploadSubmissionRequestDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
@@ -27,17 +27,21 @@ public class UploadApiClient {
     }
 
     /**
-     * Uploads a ZIP (bytes) as Base64-encoded JSON to the provided URL.
-     * Returns the HTTP status code and response body for debugging.
+     * Uploads a Base64-encoded ZIP file to the specified URL.
+     *
+     * @param uploadUrl The URL to upload the ZIP file to.
+     * @param zipBytes The byte array of the ZIP file to be uploaded.
+     * @return An HttpResult object containing the status code and response body.
+     * @throws Exception if an error occurs during the upload process.
      */
-    public HttpResult uploadZipBase64Once(String uploadUrl, byte[] zipBytes) throws Exception {
+    public HttpResultDTO uploadZipBase64Once(String uploadUrl, byte[] zipBytes) throws Exception {
         if (zipBytes == null || zipBytes.length == 0) {
             throw new IllegalArgumentException("zipBytes is null/empty");
         }
         // Base64 encode
         String b64 = Base64.getEncoder().encodeToString(zipBytes);
         // JSON body
-        String json = mapper.writeValueAsString(new UploadSubmissionRequest(b64));
+        String json = mapper.writeValueAsString(new UploadSubmissionRequestDTO(b64));
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(uploadUrl))
@@ -46,6 +50,6 @@ public class UploadApiClient {
                 .timeout(Duration.ofSeconds(30))
                 .build();
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-        return HttpResult.of(resp.statusCode(), resp.body());
+        return HttpResultDTO.of(resp.statusCode(), resp.body());
     }
 }

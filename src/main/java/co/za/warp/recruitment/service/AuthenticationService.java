@@ -1,7 +1,7 @@
 package co.za.warp.recruitment.service;
 
 import co.za.warp.recruitment.client.AuthenticationApiClient;
-import co.za.warp.recruitment.client.RateLimitedLineRunner;
+import co.za.warp.recruitment.util.RateLimitedLineRunner;
 import com.google.common.util.concurrent.RateLimiter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,7 +44,7 @@ public class AuthenticationService {
         };
 
         try {
-            return RateLimitedLineRunner.runUntilResult(rateLimiter, generatedPasswordList, authFunction);
+            return RateLimitedLineRunner.rateLimitedAuthentication(rateLimiter, generatedPasswordList, authFunction);
         } catch (CompletionException e) {
             throw (Exception) e.getCause();
         }

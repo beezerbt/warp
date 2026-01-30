@@ -2,9 +2,11 @@ package co.za.warp.recruitment;
 
 import co.za.warp.recruitment.client.AuthenticationApiClient;
 import co.za.warp.recruitment.config.AppProperties;
+import co.za.warp.recruitment.domain.HttpResultDTO;
 import co.za.warp.recruitment.service.AuthenticationService;
 import co.za.warp.recruitment.service.DictionaryGeneratorService;
 import co.za.warp.recruitment.service.UploadService;
+import co.za.warp.recruitment.service.ZippingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -70,6 +72,15 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
         Path projectRoot = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource("")).toURI());
         byte[] zip = zippingService.buildZip(cv, tmpFilePath, projectRoot);
         //Upload it
-        uploadService.uploadWithRateLimiter(authenticationResult.get(), zip);
+        Optional<HttpResultDTO> zipUploadHttpResult= uploadService.uploadWithRateLimiter(authenticationResult.get(), zip);
+        if(zipUploadHttpResult.isPresent()) {
+            if(zipUploadHttpResult.get().statusCode() == 200) {
+                log.info("Zip file uploaded successfully");
+            } else {
+                throw new IllegalAccessException("Failed to upload zip file. HTTP Status Code: " + zipUploadHttpResult.get().statusCode());
+            }
+        } else {
+            throw new IllegalAccessException("Failed to upload zip file");
+        }
     }
 }

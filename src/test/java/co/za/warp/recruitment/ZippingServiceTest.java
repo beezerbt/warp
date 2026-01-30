@@ -1,5 +1,6 @@
 package co.za.warp.recruitment;
 
+import co.za.warp.recruitment.service.ZippingService;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
