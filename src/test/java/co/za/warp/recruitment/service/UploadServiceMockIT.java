@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ContextConfiguration(classes = ServiceTestConfiguration.class)
-class UploadServiceIT {
+class UploadServiceMockIT {
     @MockBean
     HttpClient httpClient;
 
@@ -42,6 +42,9 @@ class UploadServiceIT {
     @SpyBean
     UploadService uploadService;
 
+    @SpyBean
+    ZippingService zippingService;
+
     @Test
     void setup() {
         assertNotNull(httpClient);
@@ -51,6 +54,7 @@ class UploadServiceIT {
         assertNotNull(uploadRateLimiter);
         assertNotNull(uploadService);
         assertNotNull(uploadRateLimiter);
+        assertNotNull(zippingService);
     }
 
     @Test

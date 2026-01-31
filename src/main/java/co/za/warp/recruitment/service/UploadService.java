@@ -11,6 +11,9 @@ import io.github.resilience4j.ratelimiter.RateLimiter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
@@ -52,6 +55,19 @@ public class UploadService {
 
     public String generateUploadJSONPayload(byte[] zipBytes) throws JsonProcessingException {
         String base64EncodedZipFileContentsAsString = Base64.getEncoder().encodeToString(zipBytes);
+        UploadPayload uploadPayload = new
+                UploadPayload(base64EncodedZipFileContentsAsString,
+                CANDIDATE_FIRST_NAME,
+                CANDIDATE_SURNAME,
+                CANDIDATE_EMAIL_ADDRESS);
+        var jsonMapper = JsonMapper.builder()
+                .findAndAddModules()
+                .build();
+        return jsonMapper.writeValueAsString(uploadPayload);
+    }
+
+    public String generateUploadJSONPayload(Path zipFileToSubmitPath) throws IOException {
+        String base64EncodedZipFileContentsAsString = Base64.getEncoder().encodeToString(Files.readAllBytes(zipFileToSubmitPath));
         UploadPayload uploadPayload = new
                 UploadPayload(base64EncodedZipFileContentsAsString,
                 CANDIDATE_FIRST_NAME,

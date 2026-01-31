@@ -2,6 +2,7 @@ package co.za.warp.recruitment.client;
 
 
 import co.za.warp.recruitment.domain.HttpResultDTO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -16,10 +17,12 @@ import java.util.Objects;
 public class UploadApiClient {
     public static final String CONTENT_TYPE_KEY = "Content-Type";
     public static final String CONTENT_TYPE_VALUE = "application/json";
-    private final HttpClient http;
+    private final HttpClient httpClient;
 
-    public UploadApiClient(HttpClient http) {
-        this.http = http;
+    @Autowired
+    public UploadApiClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
+        Objects.requireNonNull(httpClient, "httpClient must not be null");
     }
 
     /**
@@ -43,7 +46,7 @@ public class UploadApiClient {
                 .POST(HttpRequest.BodyPublishers.ofString(completeJSONUploadPayload))
                 .timeout(Duration.ofSeconds(30)) //TODO::this duration has to be verified
                 .build();
-        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         return HttpResultDTO.of(resp.statusCode(), resp.body());
     }
 }

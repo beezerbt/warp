@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -24,6 +25,10 @@ public class ZippingService {
     private static final long MAX_ZIP_BYTES = 5L * 1024L * 1024L; // 5MB
 
     public byte[] buildZip(Path cvPdfPath, Path dictPath, Path projectRoot) throws IOException {
+        Objects.requireNonNull(cvPdfPath, "cvPdfPath must not be null");
+        Objects.requireNonNull(dictPath, "dictPath must not be null");
+        Objects.requireNonNull(projectRoot, "projectRoot must not be null");
+
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
             // CV TODO::must be refactored
@@ -87,5 +92,18 @@ public class ZippingService {
         zos.putNextEntry(entry);
         Files.copy(file, zos);
         zos.closeEntry();
+    }
+
+    public Path findProjectRoot(Path start) {
+        Path p = start;
+        while (p != null) {
+            if (Files.exists(p.resolve("build.gradle"))
+                    || Files.exists(p.resolve("settings.gradle"))
+                    || Files.exists(p.resolve("pom.xml"))) {
+                return p;
+            }
+            p = p.getParent();
+        }
+        throw new IllegalStateException("Could not locate project root from: " + start);
     }
 }

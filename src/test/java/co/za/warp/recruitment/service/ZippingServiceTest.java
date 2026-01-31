@@ -1,17 +1,12 @@
 package co.za.warp.recruitment.service;
 
+import co.za.warp.recruitment.util.TestUtility;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashSet;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,25 +25,25 @@ class ZippingServiceTest {
         Files.writeString(dict, "Password\n", StandardCharsets.UTF_8);
 
         // --- Create a temp "project" folder and copy the real project content into it ---
-        Path realProjectRoot = findProjectRoot(Path.of("").toAbsolutePath());
+        Path realProjectRoot = TestUtility.findProjectRoot(Path.of("").toAbsolutePath());
 
         Path projectRoot = Files.createTempDirectory("proj");
 
         // Copy entire src directory (must exist for a real project)
         Path realSrc = realProjectRoot.resolve("src");
-        copyTree(realSrc, projectRoot.resolve("src"));
+        TestUtility.copyTree(realSrc, projectRoot.resolve("src"));
 
         // Copy key root files if they exist in the real project
-        copyFileIfExists(realProjectRoot.resolve("build.gradle"), projectRoot.resolve("build.gradle"));
-        copyFileIfExists(realProjectRoot.resolve("settings.gradle"), projectRoot.resolve("settings.gradle"));
-        copyFileIfExists(realProjectRoot.resolve("README.md"), projectRoot.resolve("README.md"));
-        copyFileIfExists(realProjectRoot.resolve(".gitignore"), projectRoot.resolve(".gitignore"));
-        copyFileIfExists(realProjectRoot.resolve("gradlew"), projectRoot.resolve("gradlew"));
-        copyFileIfExists(realProjectRoot.resolve("gradlew.bat"), projectRoot.resolve("gradlew.bat"));
+        TestUtility.copyFileIfExists(realProjectRoot.resolve("build.gradle"), projectRoot.resolve("build.gradle"));
+        TestUtility.copyFileIfExists(realProjectRoot.resolve("settings.gradle"), projectRoot.resolve("settings.gradle"));
+        TestUtility.copyFileIfExists(realProjectRoot.resolve("README.md"), projectRoot.resolve("README.md"));
+        TestUtility.copyFileIfExists(realProjectRoot.resolve(".gitignore"), projectRoot.resolve(".gitignore"));
+        TestUtility.copyFileIfExists(realProjectRoot.resolve("gradlew"), projectRoot.resolve("gradlew"));
+        TestUtility.copyFileIfExists(realProjectRoot.resolve("gradlew.bat"), projectRoot.resolve("gradlew.bat"));
 
         // Sanity checks: src must exist and contain at least one file
         assertTrue(Files.exists(projectRoot.resolve("src")), "Temp project src/ should exist");
-        assertTrue(directoryHasFiles(projectRoot.resolve("src")), "Temp project src/ should contain files");
+        assertTrue(TestUtility.directoryHasFiles(projectRoot.resolve("src")), "Temp project src/ should contain files");
         // --- Create ZIP ---
         byte[] zip = zippingService.buildZip(cv, dict, projectRoot);
         // --- Assert zip size <= 5 MiB ---
@@ -62,16 +57,16 @@ class ZippingServiceTest {
         assertTrue(Files.exists(zipFile), "zip file should exist inside projectRoot");
         assertTrue(Files.size(zipFile) > 0, "zip file should not be empty");
         // --- Verify ZIP contents ---
-        Set<String> zipEntries = readZipEntries(zip);
+        Set<String> zipEntries = TestUtility.readZipEntries(zip);
         assertTrue(zipEntries.contains("CV.pdf"), "ZIP should contain CV.pdf");
         assertTrue(zipEntries.contains("dict.txt"), "ZIP should contain dict.txt");
         // Root files: assert only those that actually exist in the temp project
-        assertZipContainsIfExists(zipEntries, projectRoot, "build.gradle");
-        assertZipContainsIfExists(zipEntries, projectRoot, "settings.gradle");
-        assertZipContainsIfExists(zipEntries, projectRoot, "README.md");
-        assertZipContainsIfExists(zipEntries, projectRoot, ".gitignore");
-        assertZipContainsIfExists(zipEntries, projectRoot, "gradlew");
-        assertZipContainsIfExists(zipEntries, projectRoot, "gradlew.bat");
+        TestUtility.assertZipContainsIfExists(zipEntries, projectRoot, "build.gradle");
+        TestUtility.assertZipContainsIfExists(zipEntries, projectRoot, "settings.gradle");
+        TestUtility.assertZipContainsIfExists(zipEntries, projectRoot, "README.md");
+        TestUtility.assertZipContainsIfExists(zipEntries, projectRoot, ".gitignore");
+        TestUtility.assertZipContainsIfExists(zipEntries, projectRoot, "gradlew");
+        TestUtility.assertZipContainsIfExists(zipEntries, projectRoot, "gradlew.bat");
         // src: must contain at least one file entry
         assertTrue(
                 zipEntries.stream().anyMatch(n -> n.startsWith("src/") && !n.endsWith("/")),
@@ -79,87 +74,4 @@ class ZippingServiceTest {
         );
     }
 
-    // ---------------- helpers ----------------
-
-    /**
-     * Copies an entire directory tree (directories + files) from sourceDir to targetDir.
-     * targetDir is created if needed.
-     */
-    private static void copyTree(Path sourceDir, Path targetDir) throws IOException {
-        if (!Files.exists(sourceDir) || !Files.isDirectory(sourceDir)) {
-            throw new IllegalArgumentException("Source dir does not exist or is not a directory: " + sourceDir);
-        }
-
-        Files.walkFileTree(sourceDir, new SimpleFileVisitor<>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                Path relative = sourceDir.relativize(dir);
-                Files.createDirectories(targetDir.resolve(relative));
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Path relative = sourceDir.relativize(file);
-                Path dest = targetDir.resolve(relative);
-                Files.createDirectories(dest.getParent());
-                Files.copy(file, dest, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-                return FileVisitResult.CONTINUE;
-            }
-        });
-    }
-
-    /** Copies a single file if it exists; no-op if missing. */
-    private static void copyFileIfExists(Path sourceFile, Path targetFile) throws IOException {
-        if (Files.exists(sourceFile) && Files.isRegularFile(sourceFile)) {
-            Files.createDirectories(targetFile.getParent());
-            Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-        }
-    }
-
-    /** Reads all ZIP entry names from the in-memory zip bytes. */
-    private static Set<String> readZipEntries(byte[] zipBytes) throws IOException {
-        Set<String> entries = new HashSet<>();
-        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
-            ZipEntry e;
-            while ((e = zis.getNextEntry()) != null) {
-                entries.add(e.getName());
-            }
-        }
-        return entries;
-    }
-
-    /** Asserts that a ZIP contains a given entry only if the file exists on disk under projectRoot. */
-    private static void assertZipContainsIfExists(Set<String> zipEntries, Path projectRoot, String fileName) {
-        Path f = projectRoot.resolve(fileName);
-        if (Files.exists(f) && Files.isRegularFile(f)) {
-            assertTrue(zipEntries.contains(fileName), "ZIP should contain " + fileName);
-        }
-    }
-
-    /** Returns true if a directory contains at least one regular file anywhere under it. */
-    private static boolean directoryHasFiles(Path dir) {
-        try (var s = Files.walk(dir)) {
-            return s.anyMatch(Files::isRegularFile);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    /**
-     * Finds the project root by walking upwards until it finds a build marker.
-     * Works whether the test is executed from the project root, a module root, or a build dir.
-     */
-    private static Path findProjectRoot(Path start) {
-        Path p = start;
-        while (p != null) {
-            if (Files.exists(p.resolve("build.gradle"))
-                    || Files.exists(p.resolve("settings.gradle"))
-                    || Files.exists(p.resolve("pom.xml"))) {
-                return p;
-            }
-            p = p.getParent();
-        }
-        throw new IllegalStateException("Could not locate project root from: " + start);
-    }
 }

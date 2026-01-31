@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 
 @SpringBootApplication
 @EnableConfigurationProperties(AppProperties.class)
-public class PasswordApiAssessmentApplication implements CommandLineRunner {
+public class WarpApplication implements CommandLineRunner {
 
     static final Logger log = Logger.getLogger(AuthenticationApiClient.class.getName());
 
@@ -39,15 +39,15 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
     private final UploadService uploadService;
 
     @Autowired
-    public PasswordApiAssessmentApplication (AuthenticationService authenticationService,
-                                             ZippingService zippingService, UploadService uploadService) {
+    public WarpApplication(AuthenticationService authenticationService,
+                           ZippingService zippingService, UploadService uploadService) {
         this.authenticationService = authenticationService;
         this.zippingService = zippingService;
         this.uploadService = uploadService;
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(PasswordApiAssessmentApplication.class, args);
+        SpringApplication.run(WarpApplication.class, args);
     }
 
     @Override
@@ -67,8 +67,9 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
         }
         //Generate the zip file
         Path cv = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource(KAMBIZ_SHAHRI_CV_PDF_FILENAME)).toURI());
-        Path realProjectRoot = findProjectRoot(Path.of("").toAbsolutePath());
+        Path realProjectRoot = zippingService.findProjectRoot(Path.of("").toAbsolutePath());
         byte[] zip = zippingService.buildZip(cv, tmpFilePath, realProjectRoot);
+
         //Upload it
        /* Optional<HttpResultDTO> zipUploadHttpResult= uploadService.uploadWithRateLimiter(authenticationResult.get(), zip);
         if(zipUploadHttpResult.isPresent()) {
@@ -80,18 +81,5 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
         } else {
             throw new IllegalAccessException("Failed to upload zip file");
         }*/
-    }
-
-    private static Path findProjectRoot(Path start) {
-        Path p = start;
-        while (p != null) {
-            if (Files.exists(p.resolve("build.gradle"))
-                    || Files.exists(p.resolve("settings.gradle"))
-                    || Files.exists(p.resolve("pom.xml"))) {
-                return p;
-            }
-            p = p.getParent();
-        }
-        throw new IllegalStateException("Could not locate project root from: " + start);
     }
 }
