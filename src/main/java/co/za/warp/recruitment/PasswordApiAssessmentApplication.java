@@ -65,7 +65,6 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
         if(authenticationResult.isEmpty()) {
             throw new IllegalAccessException("Authentication failed");
         }
-        log.info("Authentication result was POS URL: " + authenticationResult.get());
         //Generate the zip file
         Path cv = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource(KAMBIZ_SHAHRI_CV_PDF_FILENAME)).toURI());
         Path projectRoot = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource("")).toURI());
