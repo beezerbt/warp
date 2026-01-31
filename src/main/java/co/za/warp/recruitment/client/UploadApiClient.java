@@ -2,7 +2,6 @@ package co.za.warp.recruitment.client;
 
 
 import co.za.warp.recruitment.domain.HttpResultDTO;
-import com.google.common.base.Preconditions;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -11,6 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Objects;
 
 @Component
 public class UploadApiClient {
@@ -31,10 +31,12 @@ public class UploadApiClient {
      * @throws Exception if an error occurs during the upload process.
      */
     public HttpResultDTO uploadZipBase64Once(String uploadUrl, String completeJSONUploadPayload) throws Exception {
-        Preconditions.checkArgument(uploadUrl != null && completeJSONUploadPayload != null,
-                "Both upload URL and payload must not be null.");
-        Preconditions.checkArgument(!(uploadUrl.trim().isEmpty() || completeJSONUploadPayload.trim().isEmpty()),
-                "Both upload URL and payload must not be blank.");
+        Objects.requireNonNull(uploadUrl, "Upload URL must not be null");
+        Objects.requireNonNull(completeJSONUploadPayload, "Payload must not be null");
+        if(uploadUrl.trim().isEmpty() || completeJSONUploadPayload.trim().isEmpty()){
+            throw new IllegalArgumentException("Both upload URL and payload must not be blank.");
+        }
+
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(uploadUrl))
                 .header(CONTENT_TYPE_KEY, CONTENT_TYPE_VALUE)

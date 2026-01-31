@@ -19,11 +19,10 @@ repositories {
 
 dependencies {
     //Rate limiting - Start
-    implementation 'com.google.guava:guava:33.0.0-jre'
+    implementation "io.github.resilience4j:resilience4j-ratelimiter:2.2.0"
     //Rate limiting - End
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
-
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.mockito:mockito-core:5.12.0'
 }

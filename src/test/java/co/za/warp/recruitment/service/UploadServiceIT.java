@@ -1,13 +1,13 @@
 package co.za.warp.recruitment.service;
 
 import co.za.warp.recruitment.client.UploadApiClient;
+import co.za.warp.recruitment.config.RateLimiterFactory;
 import co.za.warp.recruitment.domain.HttpResultDTO;
 import co.za.warp.recruitment.util.TestUtility;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.util.concurrent.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -19,7 +19,6 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import static co.za.warp.recruitment.config.ApplicationConfig.OUTBOUND_UPLOAD_RATE_LIMITER_BEAN;
 import static co.za.warp.recruitment.util.TestUtility.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,10 +37,7 @@ class UploadServiceIT {
     @MockBean
     UploadApiClient uploadApiClient;
 
-    @MockBean
-    @Qualifier(OUTBOUND_UPLOAD_RATE_LIMITER_BEAN)
-    @SuppressWarnings("UnstableApiUsage")
-    RateLimiter rateLimiter;
+    RateLimiter uploadRateLimiter;
 
     @SpyBean
     UploadService uploadService;
@@ -51,8 +47,10 @@ class UploadServiceIT {
         assertNotNull(httpClient);
         assertNotNull(objectMapper);
         assertNotNull(httpResponse);
-        assertNotNull(rateLimiter);
+        uploadRateLimiter = RateLimiterFactory.createUploadRateLimiter();
+        assertNotNull(uploadRateLimiter);
         assertNotNull(uploadService);
+        assertNotNull(uploadRateLimiter);
     }
 
     @Test

@@ -37,11 +37,11 @@ class UploadApiClientIT {
     @Test
     void uploadZipBase64_Once_throwsOnNullUploadPayload() {
         UploadApiClient client = new UploadApiClient(httpClient);
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
+        NullPointerException ex = assertThrows(
+                NullPointerException.class,
                 () -> client.uploadZipBase64Once("https://example.com/upload", null)
         );
-        assertEquals("Both upload URL and payload must not be null.", ex.getMessage());
+        assertEquals("Payload must not be null", ex.getMessage());
         verifyNoInteractions(httpClient, objectMapper);
     }
 

@@ -1,14 +1,14 @@
 package co.za.warp.recruitment.service;
 
 import co.za.warp.recruitment.client.UploadApiClient;
+import co.za.warp.recruitment.config.RateLimiterFactory;
 import co.za.warp.recruitment.domain.HttpResultDTO;
 import co.za.warp.recruitment.domain.UploadPayload;
 import co.za.warp.recruitment.util.RateLimitedLineRunner;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.google.common.util.concurrent.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.Base64;
@@ -16,21 +16,18 @@ import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 
-import static co.za.warp.recruitment.config.ApplicationConfig.OUTBOUND_UPLOAD_RATE_LIMITER_BEAN;
+import static co.za.warp.recruitment.domain.UploadPayload.*;
 
 @Service
-@SuppressWarnings("UnstableApiUsage")
 public class UploadService {
     private final RateLimiter rateLimiter;
     private final UploadApiClient uploadApiClient;
 
     @Autowired
     public UploadService(
-            @Qualifier(OUTBOUND_UPLOAD_RATE_LIMITER_BEAN)
-            RateLimiter rateLimiter,
             UploadApiClient uploadApiClient) {
-        this.rateLimiter = rateLimiter;
         this.uploadApiClient = uploadApiClient;
+        this.rateLimiter = RateLimiterFactory.createUploadRateLimiter();
     }
 
     public Optional<HttpResultDTO> uploadZipOnce(String uploadURL, byte[] zipBytes) throws Exception {
@@ -46,7 +43,6 @@ public class UploadService {
                 throw new CompletionException(e);
             }
         };
-
         try {
             return RateLimitedLineRunner.rateLimitedUploadOfZipFile(rateLimiter, zipBytes, uploadFunction);
         } catch (CompletionException e) {
@@ -57,9 +53,10 @@ public class UploadService {
     public String generateUploadJSONPayload(byte[] zipBytes) throws JsonProcessingException {
         String base64EncodedZipFileContentsAsString = Base64.getEncoder().encodeToString(zipBytes);
         UploadPayload uploadPayload = new
-                UploadPayload(base64EncodedZipFileContentsAsString, "Kambiz",
-                "Eghbali Tabar-Shahri",
-                "kambiz.shahri@gmail.com");
+                UploadPayload(base64EncodedZipFileContentsAsString,
+                CANDIDATE_FIRST_NAME,
+                CANDIDATE_SURNAME,
+                CANDIDATE_EMAIL_ADDRESS);
         var jsonMapper = JsonMapper.builder()
                 .findAndAddModules()
                 .build();

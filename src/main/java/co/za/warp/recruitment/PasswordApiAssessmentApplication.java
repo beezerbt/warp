@@ -2,7 +2,6 @@ package co.za.warp.recruitment;
 
 import co.za.warp.recruitment.client.AuthenticationApiClient;
 import co.za.warp.recruitment.config.AppProperties;
-import co.za.warp.recruitment.domain.HttpResultDTO;
 import co.za.warp.recruitment.service.AuthenticationService;
 import co.za.warp.recruitment.service.DictionaryGeneratorService;
 import co.za.warp.recruitment.service.UploadService;
@@ -72,7 +71,7 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
         Path projectRoot = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource("")).toURI());
         byte[] zip = zippingService.buildZip(cv, tmpFilePath, projectRoot);
         //Upload it
-        Optional<HttpResultDTO> zipUploadHttpResult= uploadService.uploadWithRateLimiter(authenticationResult.get(), zip);
+       /* Optional<HttpResultDTO> zipUploadHttpResult= uploadService.uploadWithRateLimiter(authenticationResult.get(), zip);
         if(zipUploadHttpResult.isPresent()) {
             if(zipUploadHttpResult.get().statusCode() == 200) {
                 log.info("Zip file uploaded successfully");
@@ -81,6 +80,6 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
             }
         } else {
             throw new IllegalAccessException("Failed to upload zip file");
-        }
+        }*/
     }
 }
