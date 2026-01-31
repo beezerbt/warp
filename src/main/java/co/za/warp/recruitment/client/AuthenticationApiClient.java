@@ -54,17 +54,13 @@ public class AuthenticationApiClient {
         if (body.startsWith("http://") || body.startsWith("https://")) {
             return Optional.of(body);
         }
-        try {
-            JsonNode node = mapper.readTree(body);
-            // best-effort guesses of field names
-            for (String key : new String[]{"url", "temporaryUrl", "temporary_url", "uploadUrl", "upload_url"}) {
-                if (node.hasNonNull(key) && node.get(key).isTextual()) {
-                    log.info("key: " + key + " value: " + node.get(key).asText());
-                    return Optional.of(node.get(key).asText());
-                }
+        JsonNode node = mapper.readTree(body);
+        // best-effort guesses of field names
+        for (String key : new String[]{"url", "temporaryUrl", "temporary_url", "uploadUrl", "upload_url"}) {
+            if (node.hasNonNull(key) && node.get(key).isTextual()) {
+                log.info("key: " + key + " value: " + node.get(key).asText());
+                return Optional.of(node.get(key).asText());
             }
-        } catch (Exception ignore) {
-            // fall through
         }
         log.info("END - Authenticating once");
         return Optional.empty();

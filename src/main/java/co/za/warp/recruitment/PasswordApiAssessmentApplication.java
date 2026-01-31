@@ -67,8 +67,8 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
         }
         //Generate the zip file
         Path cv = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource(KAMBIZ_SHAHRI_CV_PDF_FILENAME)).toURI());
-        Path projectRoot = Paths.get(Objects.requireNonNull(getClass().getClassLoader().getResource("")).toURI());
-        byte[] zip = zippingService.buildZip(cv, tmpFilePath, projectRoot);
+        Path realProjectRoot = findProjectRoot(Path.of("").toAbsolutePath());
+        byte[] zip = zippingService.buildZip(cv, tmpFilePath, realProjectRoot);
         //Upload it
        /* Optional<HttpResultDTO> zipUploadHttpResult= uploadService.uploadWithRateLimiter(authenticationResult.get(), zip);
         if(zipUploadHttpResult.isPresent()) {
@@ -80,5 +80,18 @@ public class PasswordApiAssessmentApplication implements CommandLineRunner {
         } else {
             throw new IllegalAccessException("Failed to upload zip file");
         }*/
+    }
+
+    private static Path findProjectRoot(Path start) {
+        Path p = start;
+        while (p != null) {
+            if (Files.exists(p.resolve("build.gradle"))
+                    || Files.exists(p.resolve("settings.gradle"))
+                    || Files.exists(p.resolve("pom.xml"))) {
+                return p;
+            }
+            p = p.getParent();
+        }
+        throw new IllegalStateException("Could not locate project root from: " + start);
     }
 }

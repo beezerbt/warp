@@ -1,6 +1,5 @@
-package co.za.warp.recruitment;
+package co.za.warp.recruitment.service;
 
-import co.za.warp.recruitment.service.ZippingService;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -50,30 +49,22 @@ class ZippingServiceTest {
         // Sanity checks: src must exist and contain at least one file
         assertTrue(Files.exists(projectRoot.resolve("src")), "Temp project src/ should exist");
         assertTrue(directoryHasFiles(projectRoot.resolve("src")), "Temp project src/ should contain files");
-
         // --- Create ZIP ---
         byte[] zip = zippingService.buildZip(cv, dict, projectRoot);
-
         // --- Assert zip size <= 5 MiB ---
         assertNotNull(zip, "zip bytes should not be null");
         assertTrue(zip.length > 0, "zip bytes should not be empty");
-
         long maxBytes = 5L * 1024 * 1024; // 5 MiB
         assertTrue(zip.length <= maxBytes, "zip must be <= 5 MiB, but was " + zip.length + " bytes");
-
         // --- Write zip INSIDE the projectRoot (submission folder) ---
         Path zipFile = projectRoot.resolve("submission.zip");
         Files.write(zipFile, zip);
-
         assertTrue(Files.exists(zipFile), "zip file should exist inside projectRoot");
         assertTrue(Files.size(zipFile) > 0, "zip file should not be empty");
-
         // --- Verify ZIP contents ---
         Set<String> zipEntries = readZipEntries(zip);
-
         assertTrue(zipEntries.contains("CV.pdf"), "ZIP should contain CV.pdf");
         assertTrue(zipEntries.contains("dict.txt"), "ZIP should contain dict.txt");
-
         // Root files: assert only those that actually exist in the temp project
         assertZipContainsIfExists(zipEntries, projectRoot, "build.gradle");
         assertZipContainsIfExists(zipEntries, projectRoot, "settings.gradle");
@@ -81,7 +72,6 @@ class ZippingServiceTest {
         assertZipContainsIfExists(zipEntries, projectRoot, ".gitignore");
         assertZipContainsIfExists(zipEntries, projectRoot, "gradlew");
         assertZipContainsIfExists(zipEntries, projectRoot, "gradlew.bat");
-
         // src: must contain at least one file entry
         assertTrue(
                 zipEntries.stream().anyMatch(n -> n.startsWith("src/") && !n.endsWith("/")),
