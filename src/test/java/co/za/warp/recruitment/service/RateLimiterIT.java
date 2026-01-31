@@ -1,12 +1,10 @@
 package co.za.warp.recruitment.service;
 
 import co.za.warp.recruitment.config.RateLimiterFactory;
-import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
